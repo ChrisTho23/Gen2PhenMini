@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import os
 
 def eyecolor_mapping(df, column_name):
     df = df.copy()
@@ -153,3 +156,37 @@ def get_unique_rs_values(df):
 
     # Print the unique values
     print(unique_values)
+
+def plot_images(folder_path):
+    # List all files in the folder
+    files = os.listdir(folder_path)
+
+    # Filter out files that are images (assuming common image file extensions)
+    image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
+
+    # Determine the number of rows needed in the subplot
+    num_rows = len(image_files) // 2 + (len(image_files) % 2 > 0)
+
+    # Adjust the size of the figure (width, height)
+    fig_width = 15 
+    fig_height = num_rows * 5 
+
+    # Create subplots
+    fig, axes = plt.subplots(num_rows, 2, figsize=(fig_width, fig_height))
+    axes = axes.flatten()
+
+    # Plot each image
+    for i, file in enumerate(image_files):
+        img_path = os.path.join(folder_path, file)
+        img = mpimg.imread(img_path)
+        axes[i].imshow(img)
+        axes[i].set_title(file.replace('_', ' ').replace('.png', ''))
+        axes[i].axis('off')
+
+    # Hide unused axes if any
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+

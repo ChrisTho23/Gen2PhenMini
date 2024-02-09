@@ -136,7 +136,7 @@ def genotype_encoder(df, reference_alleles):
             0 if not pd.isna(genotype) and genotype == 2 * reference_alleles[rs_col] else
             1 if not pd.isna(genotype) and reference_alleles[rs_col] in genotype else
             2 if not pd.isna(genotype) else
-            3
+            np.nan
         )
 
     encoded_df.drop(columns=['user_name', 'user_id'], inplace=True)

@@ -1,7 +1,8 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import joblib
 
-from config import DATA
+from config import DATA, ENCODER
 
 def encode_NaN(df):
     df = df.copy()
@@ -32,12 +33,15 @@ if __name__ == "__main__":
 
     df = pd.read_csv(DATA['ENCODED'])
 
-    df = drop_insignificant(df, columns_to_drop)
-    df = encode_NaN(df)
-
     eyecolor_encoder = LabelEncoderWrapper()
     df['eye_color'] = eyecolor_encoder.fit_transform(df['eye_color'])
+    joblib.dump(eyecolor_encoder, ENCODER['EYECOLOR'])
 
-    df.to_csv(DATA['PREPROCESSED'], index=False)
+    df = drop_insignificant(df, columns_to_drop)
+    df_encoded = encode_NaN(df)
+    df_encoded_no_nan = df.dropna()
+
+    df_encoded.to_csv(DATA['PREPROCESSED'], index=False)
+    df_encoded_no_nan.to_csv(DATA['PREPROCESSED_NO_NAN'], index=False)
 
     print("Preprocessing complete!")
