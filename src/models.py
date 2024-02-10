@@ -5,6 +5,8 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss, accuracy_score, classification_report, confusion_matrix, mean_squared_error, roc_auc_score
+from sklearn.model_selection import StratifiedKFold
+from tpot import TPOTClassifier
 import joblib
 import xgboost as xgb
 from bayes_opt import BayesianOptimization
@@ -14,17 +16,16 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
+
 class LogisticRegressionClassifier:
-    def __init__(self, model_path):
-        self.model = LogisticRegression(solver='lbfgs', max_iter=1000)
+    def __init__(self, model_path, class_weights=None):
+        self.model = LogisticRegression(solver='lbfgs', max_iter=1000, class_weight=class_weights)
         self.model_path = model_path
 
     def train(self, X_train, y_train):
-        print("Training logistic regression classifier model...")
         self.model.fit(X_train, y_train)
         train_pred_probs = self.model.predict_proba(X_train)
         train_loss = log_loss(y_train, train_pred_probs)
-        print(f"Training complete. Training log loss: {train_loss}")
 
         return train_loss
 
@@ -37,10 +38,6 @@ class LogisticRegressionClassifier:
         loss = log_loss(y, prediction_probs)
         acc = accuracy_score(y, predictions)
         auc_roc = roc_auc_score(y, prediction_probs, multi_class='ovr')  
-
-        print(f"Log Loss: {loss}")
-        print(f"Accuracy: {acc}")
-        print(f"ROC AUC (multi-class): {auc_roc}")
 
         # Decode the labels for confusion matrix, if label_encoder is provided
         if label_encoder is not None:
@@ -65,7 +62,6 @@ class LogisticRegressionClassifier:
             # Append the filename to the path
             cm_plot_path = os.path.join(evaluation_path, 'confusion_matrix.png')
             plt.savefig(cm_plot_path)
-            print(f"Confusion matrix saved to {cm_plot_path}")
         plt.close()
 
         return loss, acc, auc_roc
@@ -74,19 +70,22 @@ class LogisticRegressionClassifier:
         joblib.dump(self.model, self.model_path)
 
 class XGBoostClassifier:
-    def __init__(self, model_path):
+    def __init__(self, model_path, class_weights=None):
         self.model = None
         self.model_path = model_path
+        self.class_weights = class_weights
 
     def train(self, X_train, y_train):
-        self.model = xgb.XGBClassifier()  # Instantiate the model with default parameters
+        if self.class_weights:
+            self.model = xgb.XGBClassifier(scale_pos_weight=self.class_weights)
+        else:
+            self.model = xgb.XGBClassifier()
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
         self.model.fit(X_train, y_train, eval_set=[(X_val, y_val)], early_stopping_rounds=10, verbose=True)
         
         # Calculate train loss
         train_pred_probs = self.model.predict_proba(X_train)
         train_loss = log_loss(y_train, train_pred_probs)
-        print(f"Training complete. Training log loss: {train_loss}")
         
         return train_loss
 
@@ -119,7 +118,6 @@ class XGBoostClassifier:
         # Calculate train loss with tuned parameters
         train_pred_probs = self.model.predict_proba(X_train)
         train_loss = log_loss(y_train, train_pred_probs)
-        print(f"Training with tuned parameters complete. Training log loss: {train_loss}")
 
         return train_loss
 
@@ -129,10 +127,6 @@ class XGBoostClassifier:
         loss = log_loss(y, prediction_probs)
         acc = accuracy_score(y, predictions)
         auc_roc = roc_auc_score(y, prediction_probs, multi_class='ovr')  
-
-        print(f"Log Loss: {loss}")
-        print(f"Accuracy: {acc}")
-        print(f"ROC AUC (multi-class): {auc_roc}")
 
         # Plotting feature importance
         plt.figure(figsize=(10, 7))
@@ -146,13 +140,44 @@ class XGBoostClassifier:
             # Append the filename to the path
             fi_plot_path = os.path.join(evaluation_path, 'feature_importance.png')
             plt.savefig(fi_plot_path)
-            print(f"Feature importance plot saved to {fi_plot_path}")
         plt.close()
 
         return loss, acc, auc_roc
 
     def save_model(self):
         joblib.dump(self.model, self.model_path)
+
+class AutoMLClassifier:
+    def __init__(self, model_path, time_left_for_this_task=120, per_run_time_limit=30):
+        # Initialize TPOT classifier
+        cv = StratifiedKFold(n_splits=2)
+
+        # Initialize TPOT classifier with the custom cv
+        self.model = TPOTClassifier(cv=cv, max_time_mins=time_left_for_this_task / 60,
+                                    max_eval_time_mins=per_run_time_limit / 60,
+                                    verbosity=2)
+        self.model_path = model_path
+
+    def train(self, X_train, y_train):
+        # Fit the TPOT model
+        self.model.fit(X_train, y_train)
+
+        train_pred_probs = self.model.predict_proba(X_train)
+        train_loss = log_loss(y_train, train_pred_probs)
+
+        return train_loss
+
+    def evaluate(self, X_test, y_test):
+        predictions = self.model.predict(X_test)
+        loss = log_loss(y_test, predictions)
+        acc = accuracy_score(y_test, predictions)
+        auc_roc = roc_auc_score(y_test, predictions)
+
+        return loss, acc, auc_roc
+
+    def save_model(self):
+        # Export the pipeline
+        self.model.export(self.model_path)
 
 class SimpleNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -164,3 +189,6 @@ class SimpleNN(nn.Module):
         x = F.relu(self.fc1(x))  # Activation function for hidden layer
         x = self.fc2(x)          # No activation needed for the output layer with CrossEntropyLoss
         return x
+
+    def save_model(self, filename):
+        torch.save(self.state_dict(), filename)

@@ -125,26 +125,6 @@ def merge_users_genotypes(df_gen, df_user):
 
     return df
 
-def genotype_encoder(df, reference_alleles):
-    print("Encoding genotypes...")
-    encoded_df = df.copy()  # Make a copy of the DataFrame to avoid modifying the original
-
-    # Iterate over each column that starts with 'rs'
-    for rs_col in list(reference_alleles.keys()):
-        # Apply the encoding rule for each cell in the column
-        encoded_df[rs_col] = df[rs_col].apply(lambda genotype: 
-            0 if not pd.isna(genotype) and genotype == 2 * reference_alleles[rs_col] else
-            1 if not pd.isna(genotype) and reference_alleles[rs_col] in genotype else
-            2 if not pd.isna(genotype) else
-            np.nan
-        )
-
-    encoded_df.drop(columns=['user_name', 'user_id'], inplace=True)
-
-    encoded_df.to_csv(DATA['ENCODED'], index=False)
-
-    return encoded_df
-
 
 if __name__ == "__main__":
     # based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3694299/
@@ -153,21 +133,8 @@ if __name__ == "__main__":
     "rs1426654", "rs885479", "rs6119471", "rs12203592"
     ] # to be validated
 
-    # based on https://www.ncbi.nlm.nih.gov/snp/?term=rs12913832
-    reference_alleles = {
-        "rs12896399": "G", 
-        "rs12913832": "A", 
-        "rs1545397": "A",  
-        "rs16891982": "C", 
-        "rs1426654": "A",  
-        "rs885479": "G",   
-        "rs6119471": "C",  
-        "rs12203592": "C"  
-    }
-
     df_pheno = get_phenotype_data()
     df_user, user_ids = get_user_data()
     df_annotations = get_annotations_data(rsids)
     df_gen = get_genotype_data(rsids, user_ids)
     df_clean = merge_users_genotypes(df_gen, df_user)
-    df_encoded = genotype_encoder(df_clean, reference_alleles)
