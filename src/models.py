@@ -73,10 +73,16 @@ class LogisticRegressionClassifier:
         joblib.dump(self.model, self.model_path)
 
 class XGBoostClassifier:
-    def __init__(self, model_path, class_weights=None):
+    def __init__(self, model_path, class_weights=None, load_model=False):
         self.model = None
         self.model_path = model_path
         self.class_weights = class_weights
+        if load_model:
+            self.load_model()
+
+    def load_model(self):
+        # Load the model from the specified path
+        self.model = joblib.load(self.model_path)
 
     def train(self, X_train, y_train):
         if self.class_weights:
@@ -124,12 +130,38 @@ class XGBoostClassifier:
 
         return train_loss
 
-    def evaluate(self, X, y, evaluation_path=None):
+    def evaluate(self, X, y, label_encoder=None, evaluation_path=None):
         predictions = self.model.predict(X)
         prediction_probs = self.model.predict_proba(X)
         loss = log_loss(y, prediction_probs)
         acc = accuracy_score(y, predictions)
         auc_roc = roc_auc_score(y, prediction_probs, multi_class='ovr')  
+
+        # Decode the labels for confusion matrix, if label_encoder is provided
+        if label_encoder is not None:
+            y_decoded = label_encoder.inverse_transform(y)
+            predictions_decoded = label_encoder.inverse_transform(predictions)
+            cm_labels = label_encoder.encoder.classes_
+        else:
+            y_decoded = y
+            predictions_decoded = predictions
+            cm_labels = sorted(np.unique(y_decoded).tolist())
+
+        # Plotting confusion matrix
+        cm = confusion_matrix(y_decoded, predictions_decoded, labels=cm_labels)
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='d', xticklabels=cm_labels, yticklabels=cm_labels)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title("Confusion Matrix")
+
+        if evaluation_path:
+            # Ensure the evaluation path directory exists
+            os.makedirs(evaluation_path, exist_ok=True)
+            # Append the filename to the path
+            cm_plot_path = os.path.join(evaluation_path, 'confusion_matrix.png')
+            plt.savefig(cm_plot_path)
+        plt.close()
 
         # Plotting feature importance
         plt.figure(figsize=(10, 7))
@@ -138,8 +170,6 @@ class XGBoostClassifier:
         plt.tight_layout()
 
         if evaluation_path:
-            # Ensure the evaluation path directory exists
-            os.makedirs(evaluation_path, exist_ok=True)
             # Append the filename to the path
             fi_plot_path = os.path.join(evaluation_path, 'feature_importance.png')
             plt.savefig(fi_plot_path)

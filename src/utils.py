@@ -157,39 +157,6 @@ def get_unique_rs_values(df):
     # Print the unique values
     print(unique_values)
 
-def plot_images(folder_path):
-    # List all files in the folder
-    files = os.listdir(folder_path)
-
-    # Filter out files that are images (assuming common image file extensions)
-    image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
-
-    # Determine the number of rows needed in the subplot
-    num_rows = len(image_files) // 2 + (len(image_files) % 2 > 0)
-
-    # Adjust the size of the figure (width, height)
-    fig_width = 15 
-    fig_height = num_rows * 5 
-
-    # Create subplots
-    fig, axes = plt.subplots(num_rows, 2, figsize=(fig_width, fig_height))
-    axes = axes.flatten()
-
-    # Plot each image
-    for i, file in enumerate(image_files):
-        img_path = os.path.join(folder_path, file)
-        img = mpimg.imread(img_path)
-        axes[i].imshow(img)
-        axes[i].set_title(file.replace('_', ' ').replace('.png', ''))
-        axes[i].axis('off')
-
-    # Hide unused axes if any
-    for j in range(i + 1, len(axes)):
-        axes[j].axis('off')
-
-    plt.tight_layout()
-    plt.show()
-
 def model_comparison(models_dict, criteria):
     # Prepare lists to store results
     models_list = []
@@ -226,4 +193,19 @@ def model_comparison(models_dict, criteria):
     })
 
     return comparison_df
+
+def compare_accuracy(models):
+    # Filter models with '_NO_NAN' and without '_WEIGHTED' in their names
+    filtered_models = {k: v for k, v in models.items() if "_NO_NAN" in k and "_WEIGHTED" not in k}
+
+    # Extract and compare accuracies
+    accuracies = {model_name: details["test_acc"] for model_name, details in filtered_models.items()}
+    
+    # Create a DataFrame
+    accuracies_df = pd.DataFrame(list(accuracies.items()), columns=['Model', 'Accuracy'])
+
+    # Sort the DataFrame based on accuracy in descending order
+    accuracies_df = accuracies_df.sort_values(by='Accuracy', ascending=False).reset_index(drop=True)
+
+    return accuracies_df
 

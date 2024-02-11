@@ -45,8 +45,6 @@ class LabelEncoderWrapper:
     def inverse_transform(self, encoded_labels):
         return self.encoder.inverse_transform(encoded_labels)
 
-
-
 if __name__ == "__main__":
     print("Preprocessing data...")
 
