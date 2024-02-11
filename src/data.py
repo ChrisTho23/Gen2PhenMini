@@ -1,11 +1,18 @@
 import requests
 import pandas as pd
 import numpy as np
+from typing import Tuple, List
 
 from config import DATA
 from utils import eyecolor_mapping
 
-def get_phenotype_data():
+def get_phenotype_data() -> pd.DataFrame:
+    """
+    Fetches phenotype data from 'http://opensnp.org/phenotypes.json' and returns it as a pandas DataFrame.
+
+    Returns:
+        pd.DataFrame: The fetched phenotype data as a pandas DataFrame.
+    """
     print("Fetching phenotype data...")
     url = 'http://opensnp.org/phenotypes.json'
     response = requests.get(url)
@@ -20,7 +27,14 @@ def get_phenotype_data():
     print(df_pheno.head())
     return df_pheno
 
-def get_user_data():
+def get_user_data() -> Tuple[pd.DataFrame, np.ndarray]:
+    """
+    Fetches user data from http://opensnp.org/phenotypes/json/variations/1.json and processes it.
+
+    Returns:
+        df_users (pd.DataFrame): DataFrame containing user data.
+        user_ids (np.ndarray): Array of user IDs.
+    """
     print("Fetching user data...")
     url = 'http://opensnp.org/phenotypes/json/variations/1.json'
     response = requests.get(url)
@@ -42,7 +56,16 @@ def get_user_data():
 
     return df_users, user_ids
 
-def get_annotations_data(rsids):
+def get_annotations_data(rsids: List[str]) -> pd.DataFrame:
+    """
+    Fetches SNP annotations from opensnp.org and saves them to a CSV file.
+
+    Args:
+        rsids (List[str]): List of rsids to fetch annotations for.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the fetched annotations.
+    """
     print("Fetching rsn annotations...")
 
     rsids = ",".join(rsids)
@@ -54,13 +77,28 @@ def get_annotations_data(rsids):
         df_annotations = pd.DataFrame(annotations)
     else:
         print(f"Error fetching annotations: {response.status_code}")
+        df_annotations = pd.DataFrame()
+
     print(df_annotations)
 
     df_annotations.to_csv(DATA['ANNOTATIONS'], index=False)
 
     return df_annotations
 
-def get_genotype_data(rsids, user_ids):
+def get_genotype_data(rsids: List[str], user_ids: List[int]) -> pd.DataFrame:
+    """
+    Fetches genotype data for the given rsids and user ids from an API and returns a DataFrame.
+
+    Args:
+        rsids (List[str]): List of rsids to fetch genotype data for.
+        user_ids (List[int]): List of user ids to filter the genotype data.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the fetched genotype data.
+
+    Raises:
+        None
+    """
     print("Fetching genotype data...")
 
     # Define the base URL for the API
@@ -110,7 +148,18 @@ def get_genotype_data(rsids, user_ids):
 
     return df
 
-def merge_users_genotypes(df_gen, df_user):
+def merge_users_genotypes(df_gen: pd.DataFrame, df_user: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge genotype and user data.
+
+    Args:
+        df_gen (pd.DataFrame): DataFrame containing genotype data.
+        df_user (pd.DataFrame): DataFrame containing user data.
+
+    Returns:
+        pd.DataFrame: Merged DataFrame.
+
+    """
     print("Merging genotype and user data...")
     df_gen = df_gen.copy()
     df_user = df_user.copy()

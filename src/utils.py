@@ -4,8 +4,18 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
+from typing import Any, Dict, List
+def eyecolor_mapping(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Maps eye color values in a DataFrame column to predefined categories.
 
-def eyecolor_mapping(df, column_name):
+    Args:
+        df (pd.DataFrame): The DataFrame containing the eye color column.
+        column_name (str): The name of the column containing the eye color values.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the eye color values mapped to categories.
+    """
     df = df.copy()
     # Hardcoded list of strings to remove
     strings_to_remove = [
@@ -59,7 +69,7 @@ def eyecolor_mapping(df, column_name):
     df = df[~df[column_name].isin(strings_to_remove)]
 
     # Function to categorize a single eye color
-    def categorize_color(color):
+    def categorize_color(color: str) -> str:
         for key, values in colors_mapping.items():
             if color in values:
                 return key 
@@ -71,7 +81,17 @@ def eyecolor_mapping(df, column_name):
 
     return df
 
-def plot_phenotype_distribution(df, column_name):
+def plot_phenotype_distribution(df: pd.DataFrame, column_name: str) -> None:
+    """
+    Plots the distribution of a phenotype in a DataFrame column.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the phenotype column.
+        column_name (str): The name of the column containing the phenotype values.
+
+    Returns:
+        None
+    """
     # Check if 'variation' column exists in the DataFrame
     if column_name not in df.columns:
         raise ValueError(f"{column_name} column not found in the DataFrame")
@@ -84,7 +104,16 @@ def plot_phenotype_distribution(df, column_name):
     plt.ylabel('Frequency')
     plt.show()
 
-def plot_rsin(df):
+def plot_rsin(df: pd.DataFrame) -> None:
+    """
+    Plots histograms for columns starting with 'rs' in a DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the 'rs' columns.
+
+    Returns:
+        None
+    """
     # Identify all 'rs' columns
     rs_columns = [col for col in df.columns if col.startswith('rs')]
     
@@ -115,7 +144,16 @@ def plot_rsin(df):
     plt.tight_layout()  # Adjust the layout
     plt.show()
 
-def plot_rsin_eyecolor(df):
+def plot_rsin_eyecolor(df: pd.DataFrame) -> None:
+    """
+    Plots count plots for columns starting with 'rs' in a DataFrame, grouped by eye color.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the 'rs' columns and 'eye_color' column.
+
+    Returns:
+        None
+    """
     # Identify all 'rs' columns
     rs_columns = [col for col in df.columns if col.startswith('rs')]
     
@@ -147,7 +185,16 @@ def plot_rsin_eyecolor(df):
     plt.tight_layout()  # Adjust the layout
     plt.show()
 
-def get_unique_rs_values(df):
+def get_unique_rs_values(df: pd.DataFrame) -> None:
+    """
+    Prints the unique values across all 'rs' columns in a DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the 'rs' columns.
+
+    Returns:
+        None
+    """
     # Select columns that start with 'rs'
     rs_columns = df.columns[df.columns.str.startswith('rs')]
 
@@ -157,7 +204,17 @@ def get_unique_rs_values(df):
     # Print the unique values
     print(unique_values)
 
-def model_comparison(models_dict, criteria):
+def model_comparison(models_dict: Dict[str, Dict[str, Any]], criteria: str) -> pd.DataFrame:
+    """
+    Compares the performance of models based on a given criteria.
+
+    Args:
+        models_dict (Dict[str, Dict[str, Any]]): A dictionary containing the model names as keys and their details as values.
+        criteria (str): The criteria used for comparison.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the comparison results.
+    """
     # Prepare lists to store results
     models_list = []
     accuracy_normal_list = []
@@ -194,7 +251,16 @@ def model_comparison(models_dict, criteria):
 
     return comparison_df
 
-def compare_accuracy(models):
+def compare_accuracy(models: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
+    """
+    Compares the accuracy of models and returns a DataFrame sorted by accuracy.
+
+    Args:
+        models (Dict[str, Dict[str, Any]]): A dictionary containing the model names as keys and their details as values.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the model names and their accuracies, sorted by accuracy in descending order.
+    """
     # Filter models with '_NO_NAN' and without '_WEIGHTED' in their names
     filtered_models = {k: v for k, v in models.items() if "_NO_NAN" in k and "_WEIGHTED" not in k}
 
@@ -208,4 +274,3 @@ def compare_accuracy(models):
     accuracies_df = accuracies_df.sort_values(by='Accuracy', ascending=False).reset_index(drop=True)
 
     return accuracies_df
-

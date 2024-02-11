@@ -6,16 +6,32 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.preprocessing import LabelEncoder
 import joblib
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+from typing import Dict, Union, Any, Optional
 
 from config import DATA, MODEL, ENCODER, EVALUATION
 from preprocessing import LabelEncoderWrapper
 from models import LogisticRegressionClassifier, XGBoostClassifier, AutoMLClassifier, SimpleNN
 
-def test_train_split(df, target_column='eye_color', weight=False):
+def test_train_split(df: pd.DataFrame, target_column: str = 'eye_color', weight: bool = False) -> Union[tuple, tuple, Dict[str, float]]:
+    """
+    Split the data into train and test sets.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        target_column (str): The column name of the target variable. Default is 'eye_color'.
+        weight (bool): Flag to compute class weights. Default is False.
+
+    Returns:
+        If weight is False:
+            tuple: A tuple containing X_train, X_test, y_train, y_test.
+        If weight is True:
+            tuple: A tuple containing X_train, X_test, y_train, y_test, class_weights_dict.
+    """
     X = df.drop(columns=[target_column])
     y = df[target_column]
     
@@ -30,7 +46,23 @@ def test_train_split(df, target_column='eye_color', weight=False):
     
     return X_train, X_test, y_train, y_test
 
-def train_linear_model(X_train, y_train, X_test, y_test, metrics, model_name, label_encoder=None, class_weights_dict=None):
+def train_linear_model(X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, metrics: Dict[str, Dict[str, float]], model_name: str, label_encoder: Optional[LabelEncoder] = None, class_weights_dict: Optional[Dict[str, float]] = None) -> Dict[str, Dict[str, float]]:
+    """
+    Trains a linear model using logistic regression.
+
+    Args:
+        X_train (np.ndarray): The training data features.
+        y_train (np.ndarray): The training data labels.
+        X_test (np.ndarray): The testing data features.
+        y_test (np.ndarray): The testing data labels.
+        metrics (Dict[str, Dict[str, float]]): A dictionary to store the evaluation metrics.
+        model_name (str): The name of the model.
+        label_encoder (Optional[LabelEncoder], optional): The label encoder. Defaults to None.
+        class_weights_dict (Optional[Dict[str, float]], optional): The class weights dictionary. Defaults to None.
+
+    Returns:
+        Dict[str, Dict[str, float]]: The updated metrics dictionary.
+    """
     print(f"Train {model_name} model...")
     if class_weights_dict is not None:
         linear_classifier = LogisticRegressionClassifier(MODEL[model_name])
@@ -55,7 +87,24 @@ def train_linear_model(X_train, y_train, X_test, y_test, metrics, model_name, la
 
     return metrics
 
-def train_xgb_model(X_train, y_train, X_test, y_test, model_name, metrics, label_encoder=None, class_weights_dict=None, fine_tuning=False):
+def train_xgb_model(X_train: Any, y_train: Any, X_test: Any, y_test: Any, model_name: str, metrics: Dict[str, Dict[str, Any]], label_encoder: Optional[Any] = None, class_weights_dict: Optional[Dict[Any, Any]] = None, fine_tuning: bool = False) -> Dict[str, Dict[str, Any]]:
+    """
+    Trains an XGBoost model using the given training and testing data.
+
+    Args:
+        X_train (Any): The training data.
+        y_train (Any): The training labels.
+        X_test (Any): The testing data.
+        y_test (Any): The testing labels.
+        model_name (str): The name of the model.
+        metrics (Dict[str, Dict[str, Any]]): A dictionary to store the evaluation metrics.
+        label_encoder (Optional[Any], optional): The label encoder. Defaults to None.
+        class_weights_dict (Optional[Dict[Any, Any]], optional): The class weights dictionary. Defaults to None.
+        fine_tuning (bool, optional): Whether to perform fine-tuning. Defaults to False.
+
+    Returns:
+        Dict[str, Dict[str, Any]]: The updated metrics dictionary.
+    """
     print(f"Fine tuning {model_name} model...")
     if class_weights_dict is not None:
         xgb_classifier = XGBoostClassifier(MODEL[model_name], class_weights=class_weights_dict)
@@ -80,7 +129,22 @@ def train_xgb_model(X_train, y_train, X_test, y_test, model_name, metrics, label
 
     return metrics
 
-def train_automl_model(X_train, y_train, X_test, y_test, model_name, metrics, class_weights=False):
+def train_automl_model(X_train: Any, y_train: Any, X_test: Any, y_test: Any, model_name: str, metrics: Dict[str, Dict[str, float]], class_weights: bool = False) -> Dict[str, Dict[str, float]]:
+    """
+    Trains an AutoML model using the given training and testing data.
+
+    Args:
+        X_train (Any): The training data features.
+        y_train (Any): The training data labels.
+        X_test (Any): The testing data features.
+        y_test (Any): The testing data labels.
+        model_name (str): The name of the model.
+        metrics (Dict[str, Dict[str, float]]): A dictionary to store the metrics.
+        class_weights (bool, optional): Whether to use class weights during training. Defaults to False.
+
+    Returns:
+        Dict[str, Dict[str, float]]: A dictionary containing the metrics of the trained model.
+    """, 
     automl = AutoMLClassifier(model_path=MODEL[model_name], class_weights=class_weights)
     automl_train_loss = automl.train(X_train, y_train)
     automl_test_loss, automl_test_acc, automl_test_aucroc = automl.evaluate(X_test, y_test)
@@ -96,9 +160,35 @@ def train_automl_model(X_train, y_train, X_test, y_test, model_name, metrics, cl
 
     return metrics
 
-def train_neural_network(X_train, y_train, X_test, y_test, input_size, hidden_size, num_classes, 
-                         learning_rate=0.001, batch_size=32, num_epochs=30, 
-                         metrics=None, model_name=None, class_weights_dict=None):
+def train_neural_network(X_train: pd.DataFrame, y_train: pd.Series, X_test: pd.DataFrame, y_test: pd.Series, 
+                         input_size: int, hidden_size: int, num_classes: int, 
+                         learning_rate: float = 0.001, batch_size: int = 32, num_epochs: int = 30, 
+                         metrics: Optional[Dict[str, Dict[str, Union[float, str]]]] = None, 
+                         model_name: Optional[str] = None, 
+                         class_weights_dict: Optional[Dict[int, float]] = None) -> Optional[Dict[str, Dict[str, Union[float, str]]]]:
+    """
+    Trains a neural network model using the given training and testing data.
+
+    Args:
+        X_train (pd.DataFrame): The input features of the training data.
+        y_train (pd.Series): The target labels of the training data.
+        X_test (pd.DataFrame): The input features of the testing data.
+        y_test (pd.Series): The target labels of the testing data.
+        input_size (int): The size of the input features.
+        hidden_size (int): The size of the hidden layer.
+        num_classes (int): The number of classes in the target labels.
+        learning_rate (float, optional): The learning rate for the optimizer. Defaults to 0.001.
+        batch_size (int, optional): The batch size for training. Defaults to 32.
+        num_epochs (int, optional): The number of epochs for training. Defaults to 30.
+        metrics (Optional[Dict[str, Dict[str, Union[float, str]]]], optional): A dictionary to store the metrics. 
+            Defaults to None.
+        model_name (Optional[str], optional): The name of the model. Defaults to None.
+        class_weights_dict (Optional[Dict[int, float]], optional): A dictionary of class weights. 
+            Defaults to None.
+
+    Returns:
+        Optional[Dict[str, Dict[str, Union[float, str]]]]: A dictionary containing the metrics of the trained model.
+    """
     print(f"Train {model_name} model...")
     # Data preparation
     X_train = torch.tensor(X_train.values, dtype=torch.float32)

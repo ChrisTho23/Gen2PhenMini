@@ -5,7 +5,17 @@ import joblib
 
 from config import DATA, ENCODER
 
-def genotype_encoder(df, reference_alleles):
+def genotype_encoder(df: pd.DataFrame, reference_alleles: dict) -> pd.DataFrame:
+    """
+    Encodes genotypes in the DataFrame based on the reference alleles.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        reference_alleles (dict): A dictionary mapping column names to reference alleles.
+
+    Returns:
+        pd.DataFrame: The encoded DataFrame.
+    """
     print("Encoding genotypes...")
     encoded_df = df.copy()  # Make a copy of the DataFrame to avoid modifying the original
 
@@ -25,12 +35,31 @@ def genotype_encoder(df, reference_alleles):
 
     return encoded_df
 
-def encode_NaN(df):
+def encode_NaN(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Encodes NaN values in the DataFrame.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+        pd.DataFrame: The DataFrame with encoded NaN values.
+    """
     df = df.copy()
     df.fillna(3.0, inplace=True)
     return df
 
-def drop_insignificant(df, columns_to_drop):
+def drop_insignificant(df: pd.DataFrame, columns_to_drop: list) -> pd.DataFrame:
+    """
+    Drops insignificant columns from the DataFrame.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        columns_to_drop (list): A list of column names to drop.
+
+    Returns:
+        pd.DataFrame: The DataFrame with dropped columns.
+    """
     df = df.copy()
     df.drop(columns=columns_to_drop, inplace=True)
     return df
@@ -39,10 +68,28 @@ class LabelEncoderWrapper:
     def __init__(self):
         self.encoder = LabelEncoder()
     
-    def fit_transform(self, labels):
+    def fit_transform(self, labels: list) -> np.ndarray:
+        """
+        Fits the encoder to the labels and transforms them.
+
+        Args:
+            labels (list): The input labels.
+
+        Returns:
+            np.ndarray: The encoded labels.
+        """
         return self.encoder.fit_transform(labels)
     
-    def inverse_transform(self, encoded_labels):
+    def inverse_transform(self, encoded_labels: np.ndarray) -> list:
+        """
+        Inversely transforms the encoded labels.
+
+        Args:
+            encoded_labels (np.ndarray): The encoded labels.
+
+        Returns:
+            list: The original labels.
+        """
         return self.encoder.inverse_transform(encoded_labels)
 
 if __name__ == "__main__":

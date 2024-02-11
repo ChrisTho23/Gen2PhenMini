@@ -1,3 +1,7 @@
+"""
+This file specifies paths for datasets, machine learning models, encoders, and evaluation results 
+used in a genotypic to phenotypic analysis pipeline, facilitating organized access and reproducibility.
+"""
 from pathlib import Path
 
 DATA = {
