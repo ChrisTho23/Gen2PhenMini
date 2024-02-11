@@ -190,3 +190,40 @@ def plot_images(folder_path):
     plt.tight_layout()
     plt.show()
 
+def model_comparison(models_dict, criteria):
+    # Prepare lists to store results
+    models_list = []
+    accuracy_normal_list = []
+    accuracy_criteria_list = []
+    dominant_model_list = []
+
+    # Iterate through the dictionary and find models matching the criteria
+    for model_name in models_dict.keys():
+        if criteria in model_name:
+            # Extract the base model name by removing the criteria
+            base_model_name = model_name.replace(criteria, '')
+            model_with_criteria = model_name
+            normal_model = base_model_name
+
+            # Check if both normal and criteria models exist
+            if model_with_criteria in models_dict and normal_model in models_dict:
+                acc_normal = models_dict[normal_model]['test_acc']
+                acc_criteria = models_dict[model_with_criteria]['test_acc']
+                models_list.append(base_model_name)
+                accuracy_normal_list.append(acc_normal)
+                accuracy_criteria_list.append(acc_criteria)
+
+                # Determine which model is dominant based on accuracy
+                dominant_model = 'Normal' if acc_normal >= acc_criteria else f'{criteria}'
+                dominant_model_list.append(dominant_model)
+
+    # Create DataFrame
+    comparison_df = pd.DataFrame({
+        'Model': models_list,
+        'Accuracy_Normal': accuracy_normal_list,
+        f'Accuracy_{criteria}': accuracy_criteria_list,
+        'Dominant_Model': dominant_model_list
+    })
+
+    return comparison_df
+

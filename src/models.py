@@ -1,12 +1,15 @@
 import os
 import json
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss, accuracy_score, classification_report, confusion_matrix, mean_squared_error, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
-from tpot import TPOTClassifier
+import h2o
+from h2o.automl import H2OAutoML
+import h2o.grid as hgrid
 import joblib
 import xgboost as xgb
 from bayes_opt import BayesianOptimization
@@ -148,36 +151,46 @@ class XGBoostClassifier:
         joblib.dump(self.model, self.model_path)
 
 class AutoMLClassifier:
-    def __init__(self, model_path, time_left_for_this_task=120, per_run_time_limit=30):
-        # Initialize TPOT classifier
-        cv = StratifiedKFold(n_splits=2)
-
-        # Initialize TPOT classifier with the custom cv
-        self.model = TPOTClassifier(cv=cv, max_time_mins=time_left_for_this_task / 60,
-                                    max_eval_time_mins=per_run_time_limit / 60,
-                                    verbosity=2)
+    def __init__(self, model_path, max_models=20, max_runtime_secs=None, class_weights=False):
+        h2o.init()
+        if class_weights:
+            self.model = H2OAutoML(max_models=max_models, max_runtime_secs=max_runtime_secs, seed=1, balance_classes=True)
+        else:
+            self.model = H2OAutoML(max_models=max_models, max_runtime_secs=max_runtime_secs, seed=1)
         self.model_path = model_path
 
     def train(self, X_train, y_train):
-        # Fit the TPOT model
-        self.model.fit(X_train, y_train)
+        # Convert to H2OFrame
+        train_frame = h2o.H2OFrame(pd.concat([X_train, y_train], axis=1))
+        feature_names = list(X_train.columns)
+        target_name = y_train.name
 
-        train_pred_probs = self.model.predict_proba(X_train)
-        train_loss = log_loss(y_train, train_pred_probs)
+        # Set target and predictor variables
+        train_frame[target_name] = train_frame[target_name].asfactor()
 
-        return train_loss
+        # Train the model
+        self.model.train(x=feature_names, y=target_name, training_frame=train_frame)
 
     def evaluate(self, X_test, y_test):
-        predictions = self.model.predict(X_test)
-        loss = log_loss(y_test, predictions)
+        test_frame = h2o.H2OFrame(pd.concat([X_test, y_test], axis=1))
+        target_name = y_test.name
+
+        # Make predictions
+        preds = self.model.predict(test_frame).as_data_frame()
+        # H2O AutoML predictions include class probabilities and class labels. Choose what you need:
+        predictions = preds["predict"].values
+        pred_probs = preds.drop(columns=["predict"]).values
+
+        # Evaluate performance
+        loss = log_loss(y_test, pred_probs)
         acc = accuracy_score(y_test, predictions)
-        auc_roc = roc_auc_score(y_test, predictions)
+        auc_roc = roc_auc_score(y_test, pred_probs, multi_class='ovr')
 
         return loss, acc, auc_roc
 
     def save_model(self):
-        # Export the pipeline
-        self.model.export(self.model_path)
+        # Save the model
+        joblib.dump(self.model, self.model_path)
 
 class SimpleNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):

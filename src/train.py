@@ -32,7 +32,7 @@ def test_train_split(df, target_column='eye_color', weight=False):
 
 def train_linear_model(X_train, y_train, X_test, y_test, metrics, model_name, class_weights_dict=None):
     print(f"Train {model_name} model...")
-    if class_weights_dict is None:
+    if class_weights_dict is not None:
         linear_classifier = LogisticRegressionClassifier(MODEL[model_name])
     else:
         linear_classifier = LogisticRegressionClassifier(MODEL[model_name], class_weights=class_weights_dict)
@@ -57,7 +57,7 @@ def train_linear_model(X_train, y_train, X_test, y_test, metrics, model_name, cl
 
 def train_xgb_model(X_train, y_train, X_test, y_test, model_name, metrics, class_weights_dict=None, fine_tuning=False):
     print(f"Fine tuning {model_name} model...")
-    if class_weights_dict:
+    if class_weights_dict is not None:
         xgb_classifier = XGBoostClassifier(MODEL[model_name], class_weights=class_weights_dict)
     else:
         xgb_classifier = XGBoostClassifier(MODEL[model_name])
@@ -80,12 +80,11 @@ def train_xgb_model(X_train, y_train, X_test, y_test, model_name, metrics, class
 
     return metrics
 
-def train_automl_model(X_train, y_train, X_test, y_test, model_name, metrics):
-    automl = AutoMLClassifier(MODEL[model_name])
+def train_automl_model(X_train, y_train, X_test, y_test, model_name, metrics, class_weights=False):
+    automl = AutoMLClassifier(model_path=MODEL[model_name], class_weights=class_weights)
     automl_train_loss = automl.train(X_train, y_train)
-    automl_test_loss, automl_test_acc, automl_test_aucroc = automl.evaluate(X_test, y_test, evaluation_path=EVALUATION[model_name])
+    automl_test_loss, automl_test_acc, automl_test_aucroc = automl.evaluate(X_test, y_test)
     automl.save_model()
-    automl.print_selected_models()
 
     # Logging the metrics
     metrics[model_name] = {
@@ -99,7 +98,7 @@ def train_automl_model(X_train, y_train, X_test, y_test, model_name, metrics):
 
 def train_neural_network(X_train, y_train, X_test, y_test, input_size, hidden_size, num_classes, 
                          learning_rate=0.001, batch_size=32, num_epochs=30, 
-                         metrics=None, model_name="neural_network_model"):
+                         metrics=None, model_name=None, class_weights_dict=None):
     print(f"Train {model_name} model...")
     # Data preparation
     X_train = torch.tensor(X_train.values, dtype=torch.float32)
@@ -114,7 +113,12 @@ def train_neural_network(X_train, y_train, X_test, y_test, input_size, hidden_si
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
 
     model = SimpleNN(input_size, hidden_size, num_classes)
-    criterion = nn.CrossEntropyLoss()
+    # Apply class weights if provided
+    if class_weights_dict is not None:
+        class_weights = torch.tensor([class_weights_dict.get(i, 1.0) for i in range(num_classes)], dtype=torch.float32)
+        criterion = nn.CrossEntropyLoss(weight=class_weights)
+    else:
+        criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # Training loop
@@ -178,6 +182,7 @@ if __name__ == "__main__":
     metrics = train_linear_model(X_train, y_train, X_test, y_test, metrics, 'LINEAR_NO_NAN')
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_NO_NAN', metrics)
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_FINE_NO_NAN', metrics, fine_tuning=True)
+    metrics = train_automl_model(X_train, y_train, X_test, y_test, 'AUTOML_NO_NAN', metrics)
     metrics = train_neural_network(X_train, y_train, X_test, y_test, input_size=6, hidden_size=10, num_classes=7,
                                     learning_rate=0.001, batch_size=32, num_epochs=30,
                                     metrics=metrics, model_name="NEURAL_NETWORK_NO_NAN")
@@ -186,20 +191,34 @@ if __name__ == "__main__":
     metrics = train_linear_model(X_train, y_train, X_test, y_test, metrics, 'LINEAR_NO_NAN_WEIGHTED', class_weights_dict=class_weights_dict)
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_NO_NAN_WEIGHTED', metrics, class_weights_dict=class_weights_dict)
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_FINE_NO_NAN_WEIGHTED', metrics, fine_tuning=True, class_weights_dict=class_weights_dict)
+    metrics = train_automl_model(X_train, y_train, X_test, y_test, 'AUTOML_NO_NAN_WEIGHTED', metrics, class_weights=True)
+    metrics = train_neural_network(X_train, y_train, X_test, y_test, input_size=6, hidden_size=10, num_classes=7,
+                                learning_rate=0.001, batch_size=32, num_epochs=30,
+                                metrics=metrics, model_name="NEURAL_NETWORK_NO_NAN_WEIGHTED", class_weights_dict=class_weights_dict)
 
     print(f"Training models on data with encoded NaN values...")
 
     df = pd.read_csv(DATA['FINAL'])
 
     X_train, X_test, y_train, y_test, class_weights_dict = test_train_split(df, weight=True)
-
+    
+    print("Train models without class weights...")
     metrics = train_linear_model(X_train, y_train, X_test, y_test, metrics, 'LINEAR')
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST', metrics)
     metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_FINE', metrics, fine_tuning=True)
-    #metrics = train_automl_model(X_train, y_train, X_test, y_test, 'AUTOML', metrics)
+    metrics = train_automl_model(X_train, y_train, X_test, y_test, 'AUTOML', metrics)
     metrics = train_neural_network(X_train, y_train, X_test, y_test, input_size=13, hidden_size=10, num_classes=7,
                                         learning_rate=0.001, batch_size=32, num_epochs=30,
                                         metrics=metrics, model_name="NEURAL_NETWORK")
+
+    print("Train models with class weights...")
+    metrics = train_linear_model(X_train, y_train, X_test, y_test, metrics, 'LINEAR_WEIGHTED', class_weights_dict=class_weights_dict)
+    metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_WEIGHTED', metrics, class_weights_dict=class_weights_dict)
+    metrics = train_xgb_model(X_train, y_train, X_test, y_test, 'XGBOOST_WEIGHTED', metrics, fine_tuning=True, class_weights_dict=class_weights_dict)
+    metrics = train_automl_model(X_train, y_train, X_test, y_test, 'AUTOML_WEIGHTED', metrics, class_weights=True)
+    metrics = train_neural_network(X_train, y_train, X_test, y_test, input_size=13, hidden_size=10, num_classes=7,
+                                learning_rate=0.001, batch_size=32, num_epochs=30,
+                                metrics=metrics, model_name="NEURAL_NETWORK_WEIGHTED", class_weights_dict=class_weights_dict)
 
     with open(EVALUATION["METRICS"], 'w') as file:
         json.dump(metrics, file, indent=4)
