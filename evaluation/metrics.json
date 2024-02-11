@@ -1,26 +1,116 @@
 {
     "LINEAR_NO_NAN": {
-        "train_loss": 1.367869530190343,
-        "test_loss": 1.449559274855748,
-        "test_acc": 0.43258426966292135,
-        "test_aucroc": 0.7453038964260879
+        "train_loss": 1.3094774964115095,
+        "test_loss": 1.2500542455610923,
+        "test_acc": 0.5144508670520231,
+        "test_aucroc": 0.7994108171142589
     },
-    "LINEAR_ENCODED": {
-        "train_loss": 1.4489279424829726,
-        "test_loss": 1.5142071631340337,
-        "test_acc": 0.45132743362831856,
-        "test_aucroc": 0.7740422207231037
+    "XGBOOST_NO_NAN": {
+        "train_loss": 1.2776840645560195,
+        "test_loss": 1.2665028817667958,
+        "test_acc": 0.5260115606936416,
+        "test_aucroc": 0.7881730376046624
+    },
+    "XGBOOST_FINE_NO_NAN": {
+        "train_loss": 1.3152038938556432,
+        "test_loss": 1.2992844489131554,
+        "test_acc": 0.5375722543352601,
+        "test_aucroc": 0.7804346722257632
+    },
+    "AUTOML_NO_NAN": {
+        "train_loss": null,
+        "test_loss": 1.65928107331574,
+        "test_acc": 0.43352601156069365,
+        "test_aucroc": 0.7575960025266343
+    },
+    "NEURAL_NETWORK_NO_NAN": {
+        "train_loss": 1.6046477003531023,
+        "test_loss": 1.3763193289438884,
+        "test_acc": 0.5375722543352601,
+        "test_aucroc": "Not available"
+    },
+    "LINEAR_NO_NAN_WEIGHTED": {
+        "train_loss": 1.3094774964115095,
+        "test_loss": 1.2500542455610923,
+        "test_acc": 0.5144508670520231,
+        "test_aucroc": 0.7994108171142589
+    },
+    "XGBOOST_NO_NAN_WEIGHTED": {
+        "train_loss": 1.2776840645560195,
+        "test_loss": 1.2665028817667958,
+        "test_acc": 0.5260115606936416,
+        "test_aucroc": 0.7881730376046624
+    },
+    "XGBOOST_FINE_NO_NAN_WEIGHTED": {
+        "train_loss": 1.3245731391879216,
+        "test_loss": 1.304330805812627,
+        "test_acc": 0.5317919075144508,
+        "test_aucroc": 0.7748095771367327
+    },
+    "AUTOML_NO_NAN_WEIGHTED": {
+        "train_loss": null,
+        "test_loss": 1.2959392085934704,
+        "test_acc": 0.5375722543352601,
+        "test_aucroc": 0.7883661811254478
+    },
+    "NEURAL_NETWORK_NO_NAN_WEIGHTED": {
+        "train_loss": 1.7572903056939444,
+        "test_loss": 1.6449776689211528,
+        "test_acc": 0.3930635838150289,
+        "test_aucroc": "Not available"
+    },
+    "LINEAR": {
+        "train_loss": 1.2810213094288883,
+        "test_loss": 1.412259486860189,
+        "test_acc": 0.4727272727272727,
+        "test_aucroc": 0.7531084459934291
     },
     "XGBOOST": {
-        "train_loss": 1.31387754977506,
-        "test_loss": 1.4594504207545211,
-        "test_acc": 0.4424778761061947,
-        "test_aucroc": 0.7750685197081256
+        "train_loss": 1.2365416157692872,
+        "test_loss": 1.4489590505932566,
+        "test_acc": 0.4636363636363636,
+        "test_aucroc": 0.73195826316414
     },
     "XGBOOST_FINE": {
-        "train_loss": 1.4155505266449073,
-        "test_loss": 1.4348779249249737,
-        "test_acc": 0.4469026548672566,
-        "test_aucroc": 0.7783620550394824
+        "train_loss": 1.2867506296884486,
+        "test_loss": 1.4043040019433388,
+        "test_acc": 0.4636363636363636,
+        "test_aucroc": 0.7548976870662001
+    },
+    "AUTOML": {
+        "train_loss": null,
+        "test_loss": 1.496987967942969,
+        "test_acc": 0.4590909090909091,
+        "test_aucroc": 0.722409068515619
+    },
+    "NEURAL_NETWORK": {
+        "train_loss": 1.4910357583846365,
+        "test_loss": 1.4040106875555856,
+        "test_acc": 0.4681818181818182,
+        "test_aucroc": "Not available"
+    },
+    "LINEAR_WEIGHTED": {
+        "train_loss": 1.2810213094288883,
+        "test_loss": 1.412259486860189,
+        "test_acc": 0.4727272727272727,
+        "test_aucroc": 0.7531084459934291
+    },
+    "XGBOOST_WEIGHTED": {
+        "train_loss": 1.2545923491702369,
+        "test_loss": 1.4263642267905454,
+        "test_acc": 0.4681818181818182,
+        "test_aucroc": 0.7429542541299067
+    },
+    "AUTOML_WEIGHTED": {
+        "train_loss": null,
+        "test_loss": 1.4976698371488202,
+        "test_acc": 0.4636363636363636,
+        "test_aucroc": 0.7364972532694238
+    },
+    "NEURAL_NETWORK_WEIGHTED": {
+        "train_loss": 1.6645082771778106,
+        "test_loss": 1.6219171285629272,
+        "test_acc": 0.35909090909090907,
+        "test_aucroc": "Not available"
     }
 }
