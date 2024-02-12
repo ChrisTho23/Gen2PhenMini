@@ -30,8 +30,3 @@ The required libraries and dependencies are listed in `requirements.txt`. This i
 4. Run the [data script](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/src/data.py) to get all relevant data from the OpenSNP website.
 5. Run the [preprocessing script](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/src/preprocessing.py) preprocess the data.
 6. Run the [train script](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/src/train.py) to train all the models defined in the [models script](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/src/models.py). You can find relevant metrics to evaluate the model performance in the [evaluation folder](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/evaluation). The trained models can be retrieved from the [models folder](https://github.com/ChrisTho23/Gen2PhenMini/blob/main/models)
-
-## Future Work
-- Enhancing feature engineering by considering additional genetic and non-genetic factors.
-- Expanding the dataset to include more relevant SNPs and increase the sample size, particularly for underrepresented eye colors.
-- Improving data quality, especially in terms of the consistency of eye color descriptions.
